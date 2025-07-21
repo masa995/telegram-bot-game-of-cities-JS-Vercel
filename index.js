@@ -1,6 +1,6 @@
 const { readFileSync,  writeFileSync } = require("fs");
 //Пакет для .evn
-require('dotenv').config(); 
+// require('dotenv').config(); //использую переменные Vercel
 //Библеотека для Телеграм-бота
 const { Telegraf, Markup } = require('telegraf');
 const { message } = require('telegraf/filters')
