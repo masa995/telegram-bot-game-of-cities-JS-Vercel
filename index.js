@@ -6,9 +6,19 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const { message } = require('telegraf/filters')
 
-//Считываем данные
+
+// Чтение файла с абсолютным путем
 const dataCitiesPath = path.join(__dirname, 'dataCities.txt');
-const dataCities = readFileSync(dataCitiesPath).toString().trim().split('\n'); //убираем лишние пробелы и строки делаем массив 
+console.log(`Путь к файлу: ${dataCitiesPath}`); // Для отладки в логах Vercel
+
+try {
+  const dataCities = readFileSync(dataCitiesPath, 'utf-8').trim().split('\n');//убираем лишние пробелы и строки делаем массив 
+  console.log(`Загружено ${dataCities.length} городов`); // Проверка загрузки
+} catch (e) {
+  console.error('Ошибка чтения файла:', e);
+  process.exit(1); // Остановка при ошибке
+}
+
 //Импортируем класс
 const GameCities = require('./GameCities');
 
