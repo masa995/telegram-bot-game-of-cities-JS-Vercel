@@ -26,16 +26,6 @@ class GameCities{
     let lastChar;
     let i = 1;
 
-    // do{
-    //   if( i <= cityName.length){
-    //     lastChar = cityName.charAt(cityName.length - i).toLowerCase();
-    //     i++;
-    //   }
-    // } while(exclusionChar.includes(lastChar));
-
-  //Лучший вариант. Более безапасный не выйдет за границы.
-    
-  // Начинаем с последней буквы
   do {
     lastChar = cityName.charAt(cityName.length - i).toLowerCase();
 

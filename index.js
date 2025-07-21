@@ -1,4 +1,5 @@
 const { readFileSync,  writeFileSync } = require("fs");
+const path = require('path');
 //Пакет для .evn
 // require('dotenv').config(); //использую переменные Vercel
 //Библеотека для Телеграм-бота
@@ -6,7 +7,8 @@ const { Telegraf, Markup } = require('telegraf');
 const { message } = require('telegraf/filters')
 
 //Считываем данные
-const dataCities = readFileSync("dataCities.txt").toString().trim().split('\n'); //убираем лишние пробелы и строки делаем массив 
+const dataCitiesPath = path.join(__dirname, 'dataCities.txt');
+const dataCities = readFileSync(dataCitiesPath).toString().trim().split('\n'); //убираем лишние пробелы и строки делаем массив 
 //Импортируем класс
 const GameCities = require('./GameCities');
 
