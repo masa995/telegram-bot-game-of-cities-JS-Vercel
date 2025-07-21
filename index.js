@@ -6,19 +6,6 @@ const path = require('path');
 const { Telegraf, Markup } = require('telegraf');
 const { message } = require('telegraf/filters')
 
-
-// Чтение файла с абсолютным путем
-const dataCitiesPath = path.join(__dirname, 'dataCities.txt');
-console.log(`Путь к файлу: ${dataCitiesPath}`); // Для отладки в логах Vercel
-
-try {
-  const dataCities = readFileSync(dataCitiesPath, 'utf-8').trim().split('\n');//убираем лишние пробелы и строки делаем массив 
-  console.log(`Загружено ${dataCities.length} городов`); // Проверка загрузки
-} catch (e) {
-  console.error('Ошибка чтения файла:', e);
-  process.exit(1); // Остановка при ошибке
-}
-
 //Импортируем класс
 const GameCities = require('./GameCities');
 
@@ -27,7 +14,7 @@ const SECRET_PATH = process.env.SECRET_PATH;
 const VERCEL_URL = process.env.VERCEL_URL; // Автоматически устанавливается Vercel
 
 const bot = new Telegraf(BOT_TOKEN);
-const game = new GameCities(dataCities);
+const game;
 
 let stringHi = "Привет! Давай сыграем в 'Города России'.\n" +
             "Цель: Назвать как можно больше городов России по цепочке,\n" +
@@ -46,6 +33,19 @@ let stringCommands = "\"/start\" : Запуск бота или запуск н�
 
 let finishText = "Спасибо, за игру. Было очень здорово играть с тобой! До встречи!\n" +
             "Если захочешь сыграть снова, то введи \"/start\"";
+// Чтение файла с абсолютным путем
+const dataCitiesPath = path.join(__dirname, 'dataCities.txt');
+console.log(`Путь к файлу: ${dataCitiesPath}`); // Для отладки в логах Vercel
+
+try {
+  const dataCities = readFileSync(dataCitiesPath, 'utf-8').trim().split('\n');//убираем лишние пробелы и строки делаем массив 
+  console.log(`Загружено ${dataCities.length} городов`); // Проверка загрузки
+  game = new GameCities(dataCities);
+  
+} catch (e) {
+  console.error('Ошибка чтения файла:', e);
+  process.exit(1); // Остановка при ошибке
+}
 
 
 const gameKeyboard = Markup.keyboard([
@@ -55,6 +55,8 @@ const gameKeyboard = Markup.keyboard([
 
 bot.start((ctx) => {
     ctx.reply(stringHi, gameKeyboard);
+    console.log("bot start!");
+    
     game.gameInit();
 });
 
