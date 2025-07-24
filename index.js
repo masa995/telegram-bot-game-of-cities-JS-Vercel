@@ -52,7 +52,7 @@ const gameKeyboard = Markup.keyboard([
 
 bot.start((ctx) => {
   ctx.telegram.sendMessage(ctx.chat.id, stringHi, {
-    reply_markup: gameKeyboard
+    reply_markup: gameKeyboard.reply_markup
   });
   if (gameUsers.has(ctx.chat.id)) {
     gameUsers.get(ctx.chat.id).gameInit();
@@ -64,7 +64,7 @@ bot.start((ctx) => {
 
 bot.hears('🎮 Начать игру', (ctx) => {
   ctx.telegram.sendMessage(ctx.chat.id, stringHi, {
-    reply_markup: gameKeyboard
+    reply_markup: gameKeyboard.reply_markup
   });
   if (gameUsers.has(ctx.chat.id)) {
     gameUsers.get(ctx.chat.id).gameInit();
@@ -156,26 +156,25 @@ try {
     const messageText = ctx.message.text;
     const chatId = ctx.message.chat.id;
 
-    for (let key of gameUsers.keys()) {
-      console.log(key +  " key");
-      
-    }
+    console.log("gameUsers " + gameUsers.size);
 
     await ctx.telegram.sendChatAction(chatId, 'typing');  // Явно указываем chatId
 
     let response;
 
-    if (gameUsers.has(ctx.chat.id)) {
-      response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
-    } else {
-      gameUsers.set(ctx.chat.id, new GameCities(dataCities));
-      response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
-    }
-
-    if (typeof response === 'string') {
-      await ctx.telegram.sendMessage(chatId, response);  // Отправка через telegram.sendMessage
-    } else {
-      console.log('Упс, это не строка');  // Обработка не строкового ответа
+    if (typeof messageText === 'string' && messageText) {
+      console.log(messageText)
+      if (gameUsers.has(ctx.chat.id)) {
+        response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
+      } else {
+        gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+        response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
+      }
+      if (typeof response === 'string') {
+        await ctx.telegram.sendMessage(chatId, response);  // Отправка через telegram.sendMessage
+      } else {
+        console.log('Упс, это не строка');  // Обработка не строкового ответа
+      }
     }
   });
 } catch (e) {
