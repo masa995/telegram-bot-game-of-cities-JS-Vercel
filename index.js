@@ -56,12 +56,9 @@ bot.start((ctx) => {
   });
   if (gameUsers.has(ctx.chat.id)) {
     gameUsers.get(ctx.chat.id).gameInit();
-     console.log("gameUsers" + gameUsers.has(ctx.chat.id));
   } else {
     gameUsers.set(ctx.chat.id, new GameCities(dataCities));
-    gameUsers.get(ctx.chat.id).gameInit();
-    console.log("gameUsers" + gameUsers.has(ctx.chat.id));
-    
+    gameUsers.get(ctx.chat.id).gameInit();  
   }
 });
 
@@ -159,15 +156,20 @@ try {
     const messageText = ctx.message.text;
     const chatId = ctx.message.chat.id;
 
+    for (let key of gameUsers.keys()) {
+      console.log(key +  " key");
+      
+    }
+
     await ctx.telegram.sendChatAction(chatId, 'typing');  // Явно указываем chatId
 
     let response;
 
     if (gameUsers.has(ctx.chat.id)) {
-      response = gameUsers.get(ctx.chat.id).gameLogic();
+      response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
     } else {
       gameUsers.set(ctx.chat.id, new GameCities(dataCities));
-      response = gameUsers.get(ctx.chat.id).gameLogic();
+      response = gameUsers.get(ctx.chat.id).gameLogic(messageText);
     }
 
     if (typeof response === 'string') {
