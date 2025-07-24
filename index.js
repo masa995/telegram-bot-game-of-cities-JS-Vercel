@@ -14,7 +14,7 @@ const SECRET_PATH = process.env.SECRET_PATH;
 const VERCEL_URL = process.env.VERCEL_URL; // Автоматически устанавливается Vercel
 
 const bot = new Telegraf(BOT_TOKEN);
-let game;
+const gameUsers = new Map();
 
 let stringHi = "Привет! Давай сыграем в 'Города России'.\n" +
             "Цель: Назвать как можно больше городов России по цепочке,\n" +
@@ -36,13 +36,9 @@ let finishText = "Спасибо, за игру. Было очень здоро�
 
 // Чтение файла с абсолютным путем
 const dataCitiesPath = path.join(__dirname, 'dataCities.txt');
-console.log(`Путь к файлу: ${dataCitiesPath}`); // Для отладки в логах Vercel
-
+let dataCities;
 try {
-  const dataCities = readFileSync(dataCitiesPath, 'utf-8').trim().split('\n');//убираем лишние пробелы и строки делаем массив 
-  console.log(`Загружено ${dataCities.length} городов`); // Проверка загрузки
-  game = new GameCities(dataCities);
-  
+  dataCities = readFileSync(dataCitiesPath, 'utf-8').trim().split('\n');//убираем лишние пробелы и строки делаем массив 
 } catch (e) {
   console.error('Ошибка чтения файла:', e);
   process.exit(1); // Остановка при ошибке
@@ -55,25 +51,54 @@ const gameKeyboard = Markup.keyboard([
 ]).resize().oneTime(false);
 
 bot.start((ctx) => {
-    ctx.reply(stringHi, gameKeyboard);
-    console.log("bot start!");
+  ctx.telegram.sendMessage(ctx.chat.id, stringHi, {
+    reply_markup: gameKeyboard
+  });
+  if (gameUsers.has(ctx.chat.id)) {
+    gameUsers.get(ctx.chat.id).gameInit();
+     console.log("gameUsers" + gameUsers.has(ctx.chat.id));
+  } else {
+    gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+    gameUsers.get(ctx.chat.id).gameInit();
+    console.log("gameUsers" + gameUsers.has(ctx.chat.id));
     
-    game.gameInit();
+  }
 });
 
 bot.hears('🎮 Начать игру', (ctx) => {
-    ctx.reply(stringHi, gameKeyboard);
-    game.gameInit();
+  ctx.telegram.sendMessage(ctx.chat.id, stringHi, {
+    reply_markup: gameKeyboard
+  });
+  if (gameUsers.has(ctx.chat.id)) {
+    gameUsers.get(ctx.chat.id).gameInit();
+  } else {
+    gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+    gameUsers.get(ctx.chat.id).gameInit();
+  }
 });
 
 bot.command('stop', (ctx) => {
-  ctx.reply(finishText, Markup.removeKeyboard());
-  game.gameStop();
+  ctx.telegram.sendMessage(ctx.chat.id, finishText, {
+    reply_markup: { remove_keyboard: true }  // Эквивалент Markup.removeKeyboard()
+  });
+  if (gameUsers.has(ctx.chat.id)) {
+    gameUsers.get(ctx.chat.id).gameStop();
+  } else {
+    gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+    gameUsers.get(ctx.chat.id).gameStop();
+  }
 });
 
 bot.hears('🚪 Закончить игру', (ctx) => {
-  ctx.reply(finishText, Markup.removeKeyboard());
-  game.gameStop();
+  ctx.telegram.sendMessage(ctx.chat.id, finishText, {
+    reply_markup: { remove_keyboard: true }  // Эквивалент Markup.removeKeyboard()
+  });
+  if (gameUsers.has(ctx.chat.id)) {
+    gameUsers.get(ctx.chat.id).gameStop();
+  } else {
+    gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+    gameUsers.get(ctx.chat.id).gameStop();
+  }
 });
 
 
@@ -87,32 +112,46 @@ bot.hears('📋 Команды', (ctx) => {
 
 try {
   bot.command('help', async (ctx) => {
-    await ctx.replyWithChatAction('typing');
-    const response = game.gameHints();
+    await ctx.telegram.sendChatAction(ctx.chat.id, 'typing');
+    let response;
+
+    if (gameUsers.has(ctx.chat.id)) {
+      response = gameUsers.get(ctx.chat.id).gameHints();
+    } else {
+      gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+      response = gameUsers.get(ctx.chat.id).gameHints();
+    }
 
     if (typeof response === 'string') {
-      await ctx.reply(response);
+      await ctx.telegram.sendMessage(ctx.chat.id, response);
     } else {
-      await ctx.reply('Упс это не строка');
+      console.log('Упс, это не строка');
     }
   });
 } catch (e) {
-  console.log(`Возникла ошибка : ${e}`);
+  console.log(`Возникла ошибка: ${e}`);
 }
 
 try {
-  bot.hears('💡 Подсказка', async (ctx) => {
-    await ctx.replyWithChatAction('typing');
-    const response = game.gameHints();
+  bot.command('help', async (ctx) => {
+    await ctx.telegram.sendChatAction(ctx.chat.id, 'typing');
+    let response;
+
+    if (gameUsers.has(ctx.chat.id)) {
+      response = gameUsers.get(ctx.chat.id).gameHints();
+    } else {
+      gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+      response = gameUsers.get(ctx.chat.id).gameHints();
+    }
 
     if (typeof response === 'string') {
-      await ctx.reply(response);
+      await ctx.telegram.sendMessage(ctx.chat.id, response);
     } else {
-      await ctx.reply('Упс это не строка');
+      console.log('Упс, это не строка');
     }
   });
 } catch (e) {
-  console.log(`Возникла ошибка : ${e}`);
+  console.log(`Возникла ошибка: ${e}`);
 }
 
 try {
@@ -120,18 +159,25 @@ try {
     const messageText = ctx.message.text;
     const chatId = ctx.message.chat.id;
 
-    await ctx.replyWithChatAction('typing')
+    await ctx.telegram.sendChatAction(chatId, 'typing');  // Явно указываем chatId
 
-      const response = game.gameLogic(messageText);
+    let response;
 
-      if (typeof response === 'string') {
-        await ctx.reply(response);
-      } else {
-        await ctx.reply('Упс это не строка');
-      }
+    if (gameUsers.has(ctx.chat.id)) {
+      response = gameUsers.get(ctx.chat.id).gameLogic();
+    } else {
+      gameUsers.set(ctx.chat.id, new GameCities(dataCities));
+      response = gameUsers.get(ctx.chat.id).gameLogic();
+    }
+
+    if (typeof response === 'string') {
+      await ctx.telegram.sendMessage(chatId, response);  // Отправка через telegram.sendMessage
+    } else {
+      console.log('Упс, это не строка');  // Обработка не строкового ответа
+    }
   });
 } catch (e) {
-  console.log(`Возникла ошибка : ${e}`);
+  console.log(`Возникла ошибка: ${e}`);
 }
 
 // Улучшенный middleware для проверки секретного токена
@@ -176,7 +222,6 @@ module.exports = async (req, res) => {
             res.status(200).json({ 
                 status: 'OK',
                 message: 'Telegram bot is running',
-                environment: process.env.NODE_ENV || 'development'
             });
         }
     } catch (err) {
